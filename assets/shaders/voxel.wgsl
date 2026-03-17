@@ -47,12 +47,12 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
 
     var base: vec3<f32>;
     if voxel_type == 1u {
-        // Soil: warm brown with fine surface variation
-        let n = fbm(world_pos * 1.5);
-        base = mix(vec3(0.38, 0.24, 0.10), vec3(0.55, 0.38, 0.18), n);
+        // Grass: sharp variation
+        let n = fbm(world_pos * 3.0);
+        base = mix(vec3(0.12, 0.28, 0.06), vec3(0.20, 0.38, 0.10), n);
     } else if voxel_type == 2u {
-        // Stone: cool grey with large-scale variation
-        let n = fbm(world_pos * 0.6);
+        // Stone: soft variation
+        let n = fbm(world_pos * 1.5);
         base = mix(vec3(0.35, 0.35, 0.36), vec3(0.58, 0.57, 0.55), n);
     } else {
         base = vec3(1.0, 0.0, 1.0); // magenta = unknown type
@@ -63,6 +63,5 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let ambient   = 0.35;
     let diffuse   = max(dot(normal, light_dir), 0.0) * 0.65;
 
-    let debug_tint = clamp(material.clip_y.x / 8.0, 0.0, 2.0);
-    return vec4(base * (ambient + diffuse) * debug_tint, 1.0);
+    return vec4(base * (ambient + diffuse), 1.0);
 }

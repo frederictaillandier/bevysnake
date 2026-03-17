@@ -1,12 +1,14 @@
 use bevy::asset::RenderAssetUsages;
 use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::picking::events::{Click, Pointer};
+use bevy::picking::pointer::PointerButton;
 use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::prelude::*;
-
 mod voxel_material;
+mod genesis;
 
 use voxel_material::VoxelMaterial;
+use genesis::generate_chunk;
 
 pub const CHUNK_SIZE: usize = 16;
 
@@ -136,25 +138,6 @@ impl Plugin for MapPlugin {
     }
 }
 
-// --- Terrain generation ---
-
-pub fn flat_chunk() -> Chunk {
-    let mut chunk = Chunk::empty();
-    for y in 0..CHUNK_SIZE / 2 {
-        for z in 0..CHUNK_SIZE {
-            for x in 0..CHUNK_SIZE {
-                // Top 2 soil layers, rest is stone
-                let voxel = if y >= CHUNK_SIZE / 2 - 2 {
-                    Voxel::Soil
-                } else {
-                    Voxel::Stone
-                };
-                chunk.set(x, y, z, voxel);
-            }
-        }
-    }
-    chunk
-}
 
 // --- Startup: spawn chunks with their mesh ---
 
@@ -167,11 +150,11 @@ fn spawn_initial_chunks(
     let material = materials.add(VoxelMaterial::default());
     commands.insert_resource(SharedVoxelMaterial(material.clone()));
 
-    for cx in -1..=1_i32 {
-        for cz in -1..=1_i32 {
+    for cx in -4..=4_i32 {
+        for cz in -4..=4_i32 {
             let coord = ChunkCoord(IVec3::new(cx, 0, cz));
-            let chunk = flat_chunk();
             let origin = coord.world_origin();
+            let chunk = generate_chunk([origin.x as i32, origin.y as i32, origin.z as i32]);
             let mesh = meshes.add(build_chunk_mesh(&chunk, origin));
             let cap_mesh = meshes.add(build_cap_mesh(&chunk, origin, clip.y));
 
@@ -420,6 +403,9 @@ fn on_chunk_click(
     mut commands: Commands,
     mut chunks: Query<(&ChunkCoord, &mut Chunk)>,
 ) {
+    if trigger.event().button != PointerButton::Primary {
+        return;
+    }
     let hit = &trigger.event().event.hit;
     let (Some(pos), Some(normal)) = (hit.position, hit.normal) else {
         return;

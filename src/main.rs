@@ -7,6 +7,7 @@ use map::{ClipPlane, MapPlugin};
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins)
         .add_plugins((CameraPlugin, MapPlugin))
         .add_systems(Startup, (spawn_fps_counter, spawn_clip_text))
