@@ -17,7 +17,7 @@ const HEIGHT_BASE: f64 = 4.0;
 /// Scale of the low-frequency continental noise (smaller = broader regions).
 const CONTINENT_NOISE_SCALE: f64 = 0.012;
 /// How many voxels the cliff raises the terrain.
-const CLIFF_HEIGHT: f64 = 10.0;
+const CLIFF_HEIGHT: f64 = 8.0;
 /// Depth of soil layer above stone.
 const SOIL_DEPTH: usize = 2;
 /// Scale of the 3D cave noise (larger = bigger caves).

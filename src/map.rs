@@ -1,14 +1,14 @@
 use bevy::asset::RenderAssetUsages;
 use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::picking::events::{Click, Pointer};
-use bevy::picking::pointer::PointerButton;
 use bevy::picking::mesh_picking::MeshPickingPlugin;
+use bevy::picking::pointer::PointerButton;
 use bevy::prelude::*;
-mod voxel_material;
 mod genesis;
+mod voxel_material;
 
-use voxel_material::VoxelMaterial;
 use genesis::generate_chunk;
+use voxel_material::VoxelMaterial;
 
 pub const CHUNK_SIZE: usize = 16;
 
@@ -76,7 +76,7 @@ impl Chunk {
 pub struct ChunkCoord(pub IVec3);
 
 impl ChunkCoord {
-    pub fn from_world_pos(pos: Vec3) -> Self {
+    pub fn _from_world_pos(pos: Vec3) -> Self {
         ChunkCoord(IVec3::new(
             pos.x.floor() as i32 / CHUNK_SIZE as i32,
             pos.y.floor() as i32 / CHUNK_SIZE as i32,
@@ -134,10 +134,17 @@ impl Plugin for MapPlugin {
         ))
         .init_resource::<ClipPlane>()
         .add_systems(Startup, spawn_initial_chunks)
-        .add_systems(Update, (rebuild_dirty_chunks, rebuild_caps_on_clip_change, sync_clip_plane, sync_cap_transforms));
+        .add_systems(
+            Update,
+            (
+                rebuild_dirty_chunks,
+                rebuild_caps_on_clip_change,
+                sync_clip_plane,
+                sync_cap_transforms,
+            ),
+        );
     }
 }
-
 
 // --- Startup: spawn chunks with their mesh ---
 
@@ -147,6 +154,15 @@ fn spawn_initial_chunks(
     mut materials: ResMut<Assets<VoxelMaterial>>,
     clip: Res<ClipPlane>,
 ) {
+    commands.spawn((
+        DirectionalLight {
+            illuminance: 8000.0,
+            shadows_enabled: false,
+            ..default()
+        },
+        Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -1.0, 0.4, 0.0)),
+    ));
+
     let material = materials.add(VoxelMaterial::default());
     commands.insert_resource(SharedVoxelMaterial(material.clone()));
 
@@ -201,7 +217,16 @@ fn sync_clip_plane(
 
 fn rebuild_dirty_chunks(
     mut commands: Commands,
-    mut query: Query<(Entity, &ChunkCoord, &Chunk, &mut Mesh3d, Option<&ChunkCapEntity>), With<ChunkDirty>>,
+    mut query: Query<
+        (
+            Entity,
+            &ChunkCoord,
+            &Chunk,
+            &mut Mesh3d,
+            Option<&ChunkCapEntity>,
+        ),
+        With<ChunkDirty>,
+    >,
     mut meshes: ResMut<Assets<Mesh>>,
     clip: Res<ClipPlane>,
     mut cap_query: Query<&mut Mesh3d, Without<Chunk>>,
@@ -374,10 +399,10 @@ fn build_cap_mesh(chunk: &Chunk, origin: Vec3, clip_y: f32) -> Mesh {
                 let base = positions.len() as u32;
                 // y = 0: the cap entity's Transform.translation.y drives the actual height
                 positions.extend_from_slice(&[
-                    [ox,      0., oz     ],
-                    [ox,      0., oz + 1.],
+                    [ox, 0., oz],
+                    [ox, 0., oz + 1.],
                     [ox + 1., 0., oz + 1.],
-                    [ox + 1., 0., oz     ],
+                    [ox + 1., 0., oz],
                 ]);
                 for _ in 0..4 {
                     normals.push([0., 1., 0.]);
@@ -388,7 +413,10 @@ fn build_cap_mesh(chunk: &Chunk, origin: Vec3, clip_y: f32) -> Mesh {
         }
     }
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
