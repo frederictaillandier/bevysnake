@@ -1,3 +1,5 @@
+use bevy::prelude::*;
+
 use noise::{Fbm, NoiseFn, Perlin};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -42,7 +44,48 @@ fn smoothstep(edge0: f64, edge1: f64, x: f64) -> f64 {
     t * t * (3.0 - 2.0 * t)
 }
 
-// --- Terrain generation ---
+// --- Terrain generation -ChunkCoord--
+
+// --- Startup: spawn chunks with their mesh ---
+
+pub fn build_map(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<super::voxel_material::VoxelMaterial>>,
+    clip: Res<super::clip_plane::ClipPlane>,
+) {
+    let material = materials.add(super::voxel_material::VoxelMaterial::default());
+    commands.insert_resource(super::voxel_material::SharedVoxelMaterial(material.clone()));
+
+    for cx in -5..=5_i32 {
+        for cz in -5..=5_i32 {
+            let coord = super::ChunkCoord(IVec3::new(cx, 0, cz));
+            let origin = coord.world_origin();
+            let chunk = generate_chunk([origin.x as i32, origin.y as i32, origin.z as i32]);
+            let mesh = meshes.add(super::build_chunk_mesh(&chunk, origin));
+            let cap_mesh = meshes.add(super::clip_plane::build_cap_mesh(&chunk, origin, clip.y));
+
+            let cap_entity = commands
+                .spawn((
+                    Mesh3d(cap_mesh),
+                    MeshMaterial3d(material.clone()),
+                    Transform::from_translation(Vec3::new(0., clip.y - 0.01, 0.)),
+                    Visibility::default(),
+                ))
+                .id();
+
+            commands.spawn((
+                coord,
+                chunk,
+                super::clip_plane::ChunkCapEntity(cap_entity),
+                Mesh3d(mesh),
+                MeshMaterial3d(material.clone()),
+                Transform::default(),
+                Visibility::default(),
+            ));
+        }
+    }
+}
 
 /// Generate a chunk at `chunk_origin` (world-space voxel position of its (0,0,0) corner).
 pub fn generate_chunk(chunk_origin: [i32; 3]) -> Chunk {

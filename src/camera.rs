@@ -1,7 +1,7 @@
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll};
 use bevy::prelude::*;
 
-use crate::map::ClipPlane;
+use crate::map::clip_plane::ClipPlane;
 
 const PAN_SPEED: f32 = 20.0;
 const ZOOM_SPEED: f32 = 2.0;

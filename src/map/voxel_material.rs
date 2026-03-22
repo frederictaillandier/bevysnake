@@ -27,3 +27,8 @@ impl Material for VoxelMaterial {
         Ok(())
     }
 }
+
+// --- Shared material handle ---
+
+#[derive(Resource)]
+pub struct SharedVoxelMaterial(pub Handle<VoxelMaterial>);

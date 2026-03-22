@@ -1,4 +1,4 @@
-use crate::map::ClipPlane;
+use crate::map::clip_plane::ClipPlane;
 use bevy::prelude::*;
 
 #[derive(Component)]
